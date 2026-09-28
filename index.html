@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>Road Rush</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  overflow:hidden;
+  background:#07111f;
+  font-family:Arial,sans-serif;
+  color:white;
+  touch-action:none;
+}
+#game{
+  position:relative;
+  width:100vw;
+  height:100vh;
+  overflow:hidden;
+  background:linear-gradient(#69c8ff 0%,#c9f0ff 48%,#57a83c 49%,#327326 100%);
+}
+
+/* SKY */
+.sun{
+  position:absolute;
+  width:90px;height:90px;
+  border-radius:50%;
+  background:#fff1a8;
+  right:8%;top:7%;
+  box-shadow:0 0 45px #fff1a8;
+}
+.cloud{
+  position:absolute;
+  width:130px;height:38px;
+  background:white;
+  border-radius:50px;
+  opacity:.85;
+}
+.cloud:before,.cloud:after{
+  content:"";
+  position:absolute;
+  background:white;
+  border-radius:50%;
+}
+.cloud:before{width:55px;height:55px;left:20px;top:-25px}
+.cloud:after{width:70px;height:70px;right:18px;top:-35px}
+.c1{top:13%;left:7%}.c2{top:25%;right:8%;transform:scale(.7)}
+
+/* ROAD */
+#road{
+  position:absolute;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(72vw,600px);
+  height:100%;
+  background:#30343b;
+  overflow:hidden;
+  border-left:12px solid #ddd;
+  border-right:12px solid #ddd;
+  box-shadow:0 0 35px #162116;
+}
+.lane{
+  position:absolute;
+  top:-120px;
+  width:10px;
+  height:90px;
+  background:#fff;
+  opacity:.9;
+}
+.l1{left:33.33%}.l2{left:66.66%}
+
+/* SIDE OBJECTS */
+.tree{
+  position:absolute;
+  width:55px;height:75px;
+  bottom:-20px;
+  z-index:2;
+}
+.tree:before{
+  content:"";
+  position:absolute;
+  bottom:0;left:23px;
+  width:10px;height:40px;
+  background:#69452b;
+}
+.tree:after{
+  content:"🌳";
+  position:absolute;
+  top:-15px;left:0;
+  font-size:55px;
+}
+.side{
+  position:absolute;
+  bottom:0;
+  width:50%;
+  height:100%;
+  pointer-events:none;
+}
+.left{left:0}.right{right:0}
+
+/* HUD */
+#hud{
+  position:absolute;
+  z-index:20;
+  top:15px;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(94%,700px);
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+}
+.stat{
+  background:rgba(4,12,25,.78);
+  border:1px solid rgba(255,255,255,.18);
+  padding:10px 15px;
+  border-radius:14px;
+  backdrop-filter:blur(8px);
+  min-width:100px;
+  text-align:center;
+  box-shadow:0 5px 20px rgba(0,0,0,.2);
+}
+.stat small{display:block;color:#aab7ca;font-size:11px}
+.stat b{font-size:20px}
+
+/* CAR */
+#player{
+  position:absolute;
+  z-index:10;
+  width:64px;
+  height:112px;
+  bottom:85px;
+  left:50%;
+  transform:translateX(-50%);
+  transition:left .09s;
+}
+.car-body{
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,#9d0016,#ff263d 48%,#a90017);
+  border-radius:18px 18px 12px 12px;
+  border:3px solid #65000d;
+  box-shadow:0 8px 15px rgba(0,0,0,.45);
+}
+.car-window{
+  position:absolute;
+  width:44px;height:34px;
+  left:7px;top:13px;
+  border-radius:12px 12px 5px 5px;
+  background:linear-gradient(135deg,#bcecff,#173b59);
+  border:2px solid #222;
+}
+.car-window2{
+  position:absolute;
+  width:44px;height:27px;
+  left:7px;top:51px;
+  border-radius:5px;
+  background:#132c42;
+  border:2px solid #222;
+}
+.light{
+  position:absolute;
+  width:12px;height:8px;
+  background:#fff7c7;
+  border-radius:4px;
+  bottom:9px;
+  box-shadow:0 0 12px #fff;
+}
+.leftlight{left:8px}.rightlight{right:8px}
+.wheel{
+  position:absolute;
+  width:9px;height:26px;
+  background:#111;
+  border-radius:6px;
+  top:28px;
+}
+.w1{left:-7px}.w2{right:-7px}
+.w3{left:-7px;bottom:25px;top:auto}.w4{right:-7px;bottom:25px;top:auto}
+
+/* TRAFFIC */
+.enemy{
+  position:absolute;
+  z-index:8;
+  width:58px;height:100px;
+  border-radius:15px;
+  border:3px solid #222;
+  box-shadow:0 8px 15px rgba(0,0,0,.4);
+}
+.enemy:before{
+  content:"";
+  position:absolute;
+  width:40px;height:32px;
+  left:6px;top:13px;
+  border-radius:9px;
+  background:#182f46;
+}
+.enemy:after{
+  content:"";
+  position:absolute;
+  width:10px;height:8px;
+  left:8px;bottom:8px;
+  border-radius:3px;
+  background:#ffecb0;
+  box-shadow:31px 0 #ffecb0;
+}
+.coin{
+  position:absolute;
+  z-index:7;
+  width:32px;height:32px;
+  border-radius:50%;
+  background:radial-gradient(circle,#fff3a0 0 20%,#ffc400 25% 65%,#b96e00 70%);
+  border:3px solid #ffe066;
+  box-shadow:0 0 20px #ffd000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#7a4a00;
+  font-weight:bold;
+  font-size:18px;
+}
+
+/* START / GAMEOVER */
+.screen{
+  position:absolute;
+  inset:0;
+  z-index:50;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(3,9,18,.68);
+  backdrop-filter:blur(7px);
+}
+.panel{
+  width:min(90%,430px);
+  text-align:center;
+  padding:35px 25px;
+  border-radius:25px;
+  background:rgba(10,22,39,.94);
+  border:1px solid rgba(255,255,255,.15);
+  box-shadow:0 20px 70px rgba(0,0,0,.45);
+}
+.panel h1{
+  font-size:42px;
+  margin-bottom:8px;
+  background:linear-gradient(90deg,#ff4055,#ffd34d);
+  -webkit-background-clip:text;
+  color:transparent;
+}
+.panel p{color:#b9c4d5;margin:10px 0 25px;line-height:1.5}
+button{
+  border:0;
+  border-radius:14px;
+  padding:14px 30px;
+  font-size:17px;
+  font-weight:bold;
+  color:white;
+  background:linear-gradient(135deg,#e5092f,#ff5b35);
+  cursor:pointer;
+  box-shadow:0 8px 25px rgba(229,9,47,.3);
+}
+button:active{transform:scale(.96)}
+#gameOver{display:none}
+
+/* CONTROLS */
+.controls{
+  position:absolute;
+  z-index:30;
+  bottom:18px;
+  left:50%;
+  transform:translateX(-50%);
+  display:flex;
+  gap:14px;
+}
+.ctrl{
+  width:64px;height:54px;
+  padding:0;
+  border-radius:16px;
+  background:rgba(5,13,25,.72);
+  border:1px solid rgba(255,255,255,.2);
+  font-size:25px;
+  box-shadow:none;
+}
+#nitro{
+  width:110px;
+  font-size:14px;
+  background:rgba(20,80,130,.75);
+}
+
+@media(max-width:500px){
+  #road{width:82vw}
+  .stat{min-width:75px;padding:8px 9px}
+  .stat b{font-size:16px}
+  .stat small{font-size:9px}
+  #player{bottom:100px}
+}
+</style>
+</head>
+
+<body>
+<div id="game">
+
+  <div class="sun"></div>
+  <div class="cloud c1"></div>
+  <div class="cloud c2"></div>
+
+  <div class="side left">
+    <div class="tree" style="left:8%;top:30%"></div>
+    <div class="tree" style="left:55%;top:48%;transform:scale(.8)"></div>
+    <div class="tree" style="left:20%;top:68%;transform:scale(.7)"></div>
+  </div>
+
+  <div class="side right">
+    <div class="tree" style="right:8%;top:35%"></div>
+    <div class="tree" style="right:58%;top:55%;transform:scale(.8)"></div>
+    <div class="tree" style="right:20%;top:72%;transform:scale(.7)"></div>
+  </div>
+
+  <div id="road"></div>
+
+  <div id="hud">
+    <div class="stat"><small>SCORE</small><b id="score">0</b></div>
+    <div class="stat"><small>COINS</small><b id="coins">0</b></div>
+    <div class="stat"><small>SPEED</small><b id="speed">1x</b></div>
+    <div class="stat"><small>BEST</small><b id="best">0</b></div>
+  </div>
+
+  <div id="player">
+    <div class="car-body"></div>
+    <div class="car-window"></div>
+    <div class="car-window2"></div>
+    <div class="wheel w1"></div>
+    <div class="wheel w2"></div>
+    <div class="wheel w3"></div>
+    <div class="wheel w4"></div>
+    <div class="light leftlight"></div>
+    <div class="light rightlight"></div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl" id="leftBtn">◀</button>
+    <button class="ctrl" id="nitro">NITRO ⚡</button>
+    <button class="ctrl" id="rightBtn">▶</button>
+  </div>
+
+  <div class="screen" id="startScreen">
+    <div class="panel">
+      <h1>ROAD RUSH</h1>
+      <p>Drive fast, collect coins and avoid traffic.<br>How long can you survive?</p>
+      <button id="startBtn">START GAME 🚗</button>
+    </div>
+  </div>
+
+  <div class="screen" id="gameOver">
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <p>Your Score: <b id="finalScore">0</b><br>
+      Coins: <b id="finalCoins">0</b><br>
+      Best Score: <b id="finalBest">0</b></p>
+      <button id="restartBtn">PLAY AGAIN 🔄</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const game = document.getElementById("game");
+const road = document.getElementById("road");
+const player = document.getElementById("player");
+
+const scoreEl = document.getElementById("score");
+const coinsEl = document.getElementById("coins");
+const speedEl = document.getElementById("speed");
+const bestEl = document.getElementById("best");
+
+const startScreen = document.getElementById("startScreen");
+const gameOver = document.getElementById("gameOver");
+
+const finalScore = document.getElementById("finalScore");
+const finalCoins = document.getElementById("finalCoins");
+const finalBest = document.getElementById("finalBest");
+
+const startBtn = document.getElementById("startBtn");
+const restartBtn = document.getElementById("restartBtn");
+
+const leftBtn = document.getElementById("leftBtn");
+const rightBtn = document.getElementById("rightBtn");
+const nitroBtn = document.getElementById("nitro");
+
+let running = false;
+let playerLane = 1;
+let score = 0;
+let coins = 0;
+let speed = 5;
+let nitro = false;
+let objects = [];
+let roadLines = [];
+let lastTime = 0;
+let spawnTimer = 0;
+let coinTimer = 0;
+
+let best = Number(localStorage.getItem("roadRushBest") || 0);
+bestEl.textContent = best;
+
+/* CREATE ROAD LINES */
+for(let i=0;i<12;i++){
+  for(let j=0;j<2;j++){
+    const line=document.createElement("div");
+    line.className="lane "+(j===0?"l1":"l2");
+    line.style.top=(i*110-110)+"px";
+    road.appendChild(line);
+    roadLines.push(line);
+  }
+}
+
+/* LANES */
+function laneX(lane){
+  const roadWidth=road.getBoundingClientRect().width;
+  const carWidth=player.offsetWidth;
+  return road.getBoundingClientRect().left+
+         roadWidth*(lane===0?.17:lane===1?.50:.83)-
+         carWidth/2;
+}
+
+function movePlayer(){
+  player.style.left=(
+    laneX(playerLane)-game.getBoundingClientRect().left+
+    player.offsetWidth/2
+  )+"px";
+}
+
+function createEnemy(){
+  const e=document.createElement("div");
+  e.className="enemy";
+
+  const colors=["#0878ff","#19a974","#8b38d8","#ff8a00","#eeeeee"];
+  e.style.background=colors[Math.floor(Math.random()*colors.length)];
+
+  const lane=Math.floor(Math.random()*3);
+  e.dataset.lane=lane;
+  e.dataset.y="-120";
+
+  e.style.left=(lane===0?17:lane===1?50:83)+"%";
+  e.style.transform="translateX(-50%)";
+  e.style.top="-120px";
+
+  road.appendChild(e);
+  objects.push(e);
+}
+
+function createCoin(){
+  const c=document.createElement("div");
+  c.className="coin";
+  c.textContent="$";
+
+  const lane=Math.floor(Math.random()*3);
+  c.dataset.lane=lane;
+  c.dataset.y="-50";
+
+  c.style.left=(lane===0?17:lane===1?50:83)+"%";
+  c.style.transform="translateX(-50%)";
+  c.style.top="-50px";
+
+  road.appendChild(c);
+  objects.push(c);
+}
+
+function rectHit(a,b){
+  const r1=a.getBoundingClientRect();
+  const r2=b.getBoundingClientRect();
+
+  return !(
+    r1.right<r2.left+8 ||
+    r1.left>r2.right-8 ||
+    r1.bottom<r2.top+8 ||
+    r1.top>r2.bottom-8
+  );
+}
+
+function endGame(){
+  running=false;
+
+  const current=Math.floor(score);
+
+  if(current>best){
+    best=current;
+    localStorage.setItem("roadRushBest",best);
+  }
+
+  finalScore.textContent=current;
+  finalCoins.textContent=coins;
+  finalBest.textContent=best;
+  bestEl.textContent=best;
+
+  gameOver.style.display="flex";
+}
+
+function clearObjects(){
+  objects.forEach(o=>o.remove());
+  objects=[];
+}
+
+function reset(){
+  clearObjects();
+
+  score=0;
+  coins=0;
+  speed=5;
+  playerLane=1;
+  nitro=false;
+  spawnTimer=0;
+  coinTimer=0;
+
+  scoreEl.textContent="0";
+  coinsEl.textContent="0";
+  speedEl.textContent="1x";
+
+  movePlayer();
+}
+
+function startGame(){
+  reset();
+  startScreen.style.display="none";
+  gameOver.style.display="none";
+  running=true;
+  lastTime=performance.now();
+  requestAnimationFrame(loop);
+}
+
+function update(time){
+  const dt=Math.min((time-lastTime)/16.67,2);
+  lastTime=time;
+
+  /* ROAD MOVEMENT */
+  roadLines.forEach(line=>{
+    let y=parseFloat(line.style.top)||0;
+    y+=speed*dt;
+
+    if(y>window.innerHeight+100) y=-120;
+
+    line.style.top=y+"px";
+  });
+
+  /* SCORE / SPEED */
+  score+=0.12*dt*speed/5;
+
+  speed+=0.0025*dt;
+
+  const multiplier=Math.max(1,Math.floor(speed/5));
+
+  scoreEl.textContent=Math.floor(score);
+  coinsEl.textContent=coins;
+  speedEl.textContent=multiplier+"x";
+
+  /* TRAFFIC SPAWN */
+  spawnTimer+=dt*16.67;
+
+  const spawnDelay=Math.max(430,900-speed*45);
+
+  if(spawnTimer>spawnDelay){
+    spawnTimer=0;
+    createEnemy();
+  }
+
+  /* COINS */
+  coinTimer+=dt*16.67;
+
+  if(coinTimer>1200){
+    coinTimer=0;
+    createCoin();
+  }
+
+  /* OBJECTS */
+  objects.forEach((obj,index)=>{
+    let y=parseFloat(obj.dataset.y);
+
+    const moveSpeed=(nitro?speed*1.65:speed)*dt;
+    y+=moveSpeed;
+
+    obj.dataset.y=y;
+    obj.style.top=y+"px";
+
+    /* collision */
+    if(y>window.innerHeight+150){
+      obj.remove();
+      objects.splice(index,1);
+      return;
+    }
+
+    if(rectHit(player,obj)){
+      if(obj.classList.contains("coin")){
+        coins++;
+        score+=10;
+        obj.remove();
+        objects.splice(index,1);
+      }else{
+        endGame();
+      }
+    }
+  });
+}
+
+function loop(time){
+  if(!running)return;
+  update(time);
+  requestAnimationFrame(loop);
+}
+
+/* KEYBOARD */
+document.addEventListener("keydown",e=>{
+  if(!running)return;
+
+  if(["ArrowLeft","a","A"].includes(e.key)){
+    playerLane=Math.max(0,playerLane-1);
+    movePlayer();
+  }
+
+  if(["ArrowRight","d","D"].includes(e.key)){
+    playerLane=Math.min(2,playerLane+1);
+    movePlayer();
+  }
+
+  if(e.key===" "){
+    nitro=true;
+  }
+});
+
+document.addEventListener("keyup",e=>{
+  if(e.key===" ") nitro=false;
+});
+
+/* MOBILE BUTTONS */
+leftBtn.addEventListener("pointerdown",e=>{
+  e.preventDefault();
+  if(!running)return;
+  playerLane=Math.max(0,playerLane-1);
+  movePlayer();
+});
+
+rightBtn.addEventListener("pointerdown",e=>{
+  e.preventDefault();
+  if(!running)return;
+  playerLane=Math.min(2,playerLane+1);
+  movePlayer();
+});
+
+nitroBtn.addEventListener("pointerdown",e=>{
+  e.preventDefault();
+  if(running)nitro=true;
+});
+
+["pointerup","pointercancel","pointerleave"].forEach(type=>{
+  nitroBtn.addEventListener(type,()=>nitro=false);
+});
+
+startBtn.addEventListener("click",startGame);
+restartBtn.addEventListener("click",startGame);
+
+window.addEventListener("resize",movePlayer);
+
+movePlayer();
+</script>
+</body>
+</html>
